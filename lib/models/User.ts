@@ -10,6 +10,7 @@ export interface IUser extends Document {
   emailVerified?: boolean;
   phoneVerified?: boolean;
   payTag?: string;
+  referredBy?: mongoose.Types.ObjectId | string;
   kycData?: {
     payidKyc?: {
       accessToken?: string;
@@ -59,6 +60,10 @@ const UserSchema = new Schema<IUser>(
       type: String,
       unique: true,
       sparse: true,
+    },
+    referredBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
     emailVerified: {
       type: Boolean,

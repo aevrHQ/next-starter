@@ -12,6 +12,7 @@ interface User {
   lastName?: string;
   picture?: string;
   payTag?: string;
+  referredBy?: string;
   emailVerified: boolean;
   phoneVerified: boolean;
   kycVerified?: boolean;

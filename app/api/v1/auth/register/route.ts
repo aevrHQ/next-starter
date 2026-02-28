@@ -5,7 +5,8 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, firstName, lastName, phone } = await req.json();
+    const { email, password, firstName, lastName, phone, referralCode } =
+      await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -24,6 +25,14 @@ export async function POST(req: Request) {
       );
     }
 
+    let referredById = null;
+    if (referralCode) {
+      const referringUser = await User.findOne({ payTag: referralCode });
+      if (referringUser) {
+        referredById = referringUser._id;
+      }
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -33,6 +42,7 @@ export async function POST(req: Request) {
       firstName,
       lastName,
       phone,
+      ...(referredById && { referredBy: referredById }),
     });
 
     return NextResponse.json({

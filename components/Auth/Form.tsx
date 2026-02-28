@@ -52,6 +52,7 @@ import {
   LockIcon,
   MailIcon,
   UserIcon,
+  TagIcon,
 } from "lucide-react";
 
 // Configuration for AuthService
@@ -490,6 +491,7 @@ const AuthForm: React.FC<{
         email: values.email || "",
         password: values.password || "",
         confirmPassword: "",
+        referralCode: "",
       },
       validationSchema: Yup.object({
         email: Yup.string()
@@ -512,6 +514,7 @@ const AuthForm: React.FC<{
         confirmPassword: Yup.string()
           .oneOf([Yup.ref("password")], "Passwords must match")
           .required("Please confirm your password"),
+        referralCode: Yup.string().optional(),
       }),
       onSubmit: async (stepValues) => {
         setLoading(true);
@@ -527,6 +530,7 @@ const AuthForm: React.FC<{
           const registerResponse = await authService.register({
             ...newValues,
             returnUrl: finalReturnUrl || undefined,
+            referralCode: stepValues.referralCode || undefined,
           });
 
           if (!registerResponse.success) {
@@ -657,6 +661,26 @@ const AuthForm: React.FC<{
             <FieldError>
               {stepFormik.touched.confirmPassword &&
                 stepFormik.errors.confirmPassword}
+            </FieldError>
+          </Field>
+          <Field>
+            <FieldLabel>Referral Code (Optional)</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <TagIcon size={20} className="text-muted-foreground" />
+              </InputGroupAddon>
+              <InputGroupInput
+                name="referralCode"
+                type="text"
+                placeholder="Friend's PayTag"
+                value={stepFormik.values.referralCode}
+                onChange={stepFormik.handleChange}
+                onBlur={stepFormik.handleBlur}
+              />
+            </InputGroup>
+            <FieldError>
+              {stepFormik.touched.referralCode &&
+                (stepFormik.errors.referralCode as string)}
             </FieldError>
           </Field>
           <div className="flex gap-2">

@@ -5,4 +5,5 @@ export interface RegisterOptions {
   lastName?: string;
   phone?: string;
   returnUrl?: string;
+  referralCode?: string;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -19,14 +20,19 @@ import {
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NavReferralDialog } from "@/components/nav-referral-dialog";
 import {
   BadgeCheckIcon,
   BellIcon,
   ChevronsUpDownIcon,
   CreditCardIcon,
   LogOutIcon,
-  SparklesIcon,
+  GiftIcon,
+  CopyIcon,
 } from "lucide-react";
+import { Calligraph } from "calligraph";
+import { Button } from "./ui/button";
+import useShare from "@/hooks/aevr/use-share";
 
 interface NavUserProps {
   variant?: "sidebar" | "header";
@@ -36,6 +42,8 @@ interface NavUserProps {
 export function NavUser({ variant = "sidebar", className }: NavUserProps) {
   const { isMobile } = useSidebar();
   const { user, isLoading, logout } = useAuth();
+  const { copy } = useShare();
+  const [referralDialogOpen, setReferralDialogOpen] = useState(false);
 
   if (isLoading) {
     if (variant === "header") {
@@ -71,10 +79,12 @@ export function NavUser({ variant = "sidebar", className }: NavUserProps) {
   const avatarSrc = user.picture || "";
   const initials = displayName
     .split(" ")
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  const handleReferralBoxOpen = () => setReferralDialogOpen(true);
 
   const dropdownContent = (
     <DropdownMenuContent
@@ -98,14 +108,34 @@ export function NavUser({ variant = "sidebar", className }: NavUserProps) {
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-medium">{displayName}</span>
             <span className="truncate text-xs">{displayEmail}</span>
+            {user.payTag && (
+              <div className="flex gap-2 justify-between items-center">
+                <span className="truncate text-xs">{user.payTag}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={() => copy(user.payTag!)}
+                >
+                  <CopyIcon className="h-3! w-3!" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <DropdownMenuItem>
-          <SparklesIcon />
-          Upgrade to Pro
+        <DropdownMenuItem
+          onClick={handleReferralBoxOpen}
+          className="cursor-pointer"
+        >
+          <GiftIcon />
+          <span>
+            <Calligraph>
+              {user.payTag ? "My Referrals" : "Get Referral Code"}
+            </Calligraph>
+          </span>
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
@@ -148,30 +178,37 @@ export function NavUser({ variant = "sidebar", className }: NavUserProps) {
   }
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem className="shrink-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-full group-data-[collapsible=icon]:h-12! group-data-[collapsible=icon]:w-12! ${className || ""}`}
-            >
-              <Avatar className="h-8 w-8 rounded-full group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:w-11">
-                <AvatarImage src={avatarSrc} alt={displayName} />
-                <AvatarFallback className="rounded-lg">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{displayName}</span>
-                <span className="truncate text-xs">{displayEmail}</span>
-              </div>
-              <ChevronsUpDownIcon className="ml-auto size-4" />
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          {dropdownContent}
-        </DropdownMenu>
-      </SidebarMenuItem>
-    </SidebarMenu>
+    <>
+      <SidebarMenu>
+        <SidebarMenuItem className="shrink-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton
+                size="lg"
+                className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground rounded-full group-data-[collapsible=icon]:h-12! group-data-[collapsible=icon]:w-12! ${className || ""}`}
+              >
+                <Avatar className="h-8 w-8 rounded-full group-data-[collapsible=icon]:h-11 group-data-[collapsible=icon]:w-11">
+                  <AvatarImage src={avatarSrc} alt={displayName} />
+                  <AvatarFallback className="rounded-lg">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium">{displayName}</span>
+                  <span className="truncate text-xs">{displayEmail}</span>
+                </div>
+                <ChevronsUpDownIcon className="ml-auto size-4" />
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            {dropdownContent}
+          </DropdownMenu>
+        </SidebarMenuItem>
+      </SidebarMenu>
+
+      <NavReferralDialog
+        open={referralDialogOpen}
+        onOpenChange={setReferralDialogOpen}
+      />
+    </>
   );
 }

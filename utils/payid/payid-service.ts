@@ -27,6 +27,29 @@ export class PayIDService extends HttpClient {
   }
 
   /**
+   * Request OAuth Magic Link from PayID API proxy
+   * Dispatches a magic link to the user's email that redirects securely through the PayID OAuth flow
+   */
+  async requestOAuthMagicLink(data: {
+    email: string;
+    shouldCreate?: boolean;
+    firstName?: string;
+    lastName?: string;
+  }): Promise<{ success: boolean; message: string; data?: unknown }> {
+    const response = await this.post<{
+      success: boolean;
+      message: string;
+      data?: unknown;
+    }>("/api/v1/payid/oauth/login/magic-link/request", data);
+
+    if (isApiResponse<{ success: boolean; message: string }>(response)) {
+      return response.data;
+    }
+
+    return response as { success: boolean; message: string };
+  }
+
+  /**
    * Get PayID user information
    */
   async getUserInfo(): Promise<PayIDUserInfo> {

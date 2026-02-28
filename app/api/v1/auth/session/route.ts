@@ -29,6 +29,7 @@ export async function GET() {
       .select(
         "-kycData.payidKyc.accessToken -kycData.payidKyc.refreshToken -kycData.payidKyc.idToken",
       )
+      .populate("referredBy", "payTag")
       .lean();
 
     if (!user) {
@@ -47,6 +48,7 @@ export async function GET() {
         lastName: user.lastName,
         picture: user.picture,
         payTag: user.payTag,
+        referredBy: user.referredBy?.payTag || undefined,
         emailVerified: user.emailVerified,
         phoneVerified: user.phoneVerified,
         kycVerified: user.kycData?.payidKyc?.kycVerified,
