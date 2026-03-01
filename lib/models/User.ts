@@ -25,6 +25,7 @@ export interface IUser extends Document {
       updatedAt?: Date;
     };
   };
+  role?: "user" | "admin";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -89,6 +90,11 @@ const UserSchema = new Schema<IUser>(
         provider: String,
         updatedAt: Date,
       },
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
     },
   },
   {
