@@ -26,7 +26,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 export interface ResponsiveDialogProps {
   title?: string | null;
   description?: string | null;
-  dialogHeader?: ReactNode;
+  dialogHeader?: ReactNode | ((isDesktop: boolean) => ReactNode);
   drawerClose?: ReactNode;
   trigger?: ReactNode;
   children?: ReactNode;
@@ -50,6 +50,9 @@ const ResponsiveDialog: React.FC<ResponsiveDialogProps> = ({
 
   const dialogOpen = isControlled ? openPrompt : internalOpen;
 
+  const headerContent =
+    typeof dialogHeader === "function" ? dialogHeader(isDesktop) : dialogHeader;
+
   const handleOpenChange = (newOpen: boolean) => {
     if (!isControlled) {
       setInternalOpen(newOpen);
@@ -68,8 +71,8 @@ const ResponsiveDialog: React.FC<ResponsiveDialogProps> = ({
             title != null || description != null ? "" : "gap-0"
           }`}
         >
-          {dialogHeader ? (
-            dialogHeader
+          {headerContent ? (
+            headerContent
           ) : (
             <DialogHeader className="p-4">
               {title != null && (
@@ -99,24 +102,32 @@ const ResponsiveDialog: React.FC<ResponsiveDialogProps> = ({
     >
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent className="max-h-[95%]">
-        <div className="wrapper overflow-y-auto">
-          <DrawerHeader
-            className={`text-left ${
-              title != null || description != null ? "p-6" : "p-0"
-            }`}
-          >
-            {title != null && <DrawerTitle>{title || "Heads Up!"}</DrawerTitle>}
-            {description != null && (
-              <DrawerDescription>
-                {description ||
-                  "Here's some important information or action you need to review and take"}
-              </DrawerDescription>
-            )}
-          </DrawerHeader>
-          <div className="px-4">{children}</div>
-          <DrawerFooter className="flex flex-row gap-4">
-            <DrawerClose asChild>{drawerClose}</DrawerClose>
-          </DrawerFooter>
+        <div className="wrapper overflow-y-auto -mt-6">
+          {headerContent ? (
+            headerContent
+          ) : (
+            <DrawerHeader
+              className={`text-left ${
+                title != null || description != null ? "p-6" : "p-0"
+              }`}
+            >
+              {title != null && (
+                <DrawerTitle>{title || "Heads Up!"}</DrawerTitle>
+              )}
+              {description != null && (
+                <DrawerDescription>
+                  {description ||
+                    "Here's some important information or action you need to review and take"}
+                </DrawerDescription>
+              )}
+            </DrawerHeader>
+          )}
+          <div className="px-4 -mx-4">{children}</div>
+          {drawerClose && (
+            <DrawerFooter className="flex flex-row gap-4">
+              <DrawerClose asChild>{drawerClose}</DrawerClose>
+            </DrawerFooter>
+          )}
         </div>
       </DrawerContent>
     </Drawer>

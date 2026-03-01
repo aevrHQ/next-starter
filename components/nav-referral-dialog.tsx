@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/input-group";
 import BucketHamsterIcon from "./Icon/BucketHamster";
 import { DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
+import { DrawerDescription, DrawerHeader, DrawerTitle } from "./ui/drawer";
 import { usePersistedState } from "@/hooks/aevr/use-persisted-state";
 import { formatDate } from "@/utils/aevr/date-formatter";
 import useShare from "@/hooks/aevr/use-share";
@@ -245,37 +246,43 @@ export function NavReferralDialog(
       onOpenPromptChange={(v) => setNavReferralState({ open: !!v })}
       title="Refer a Friend"
       description="Invite your friends to Bucket to earn rewards together."
-      dialogHeader={
-        <DialogHeader className="banner p-2">
-          <div className="wrapper banner rounded-sm grid grid-cols-5 p-4 dark:bg-app-theme-950/50 bg-app-theme-100/80 w-full min-h-20">
-            <div className="col-span-3 flex flex-col gap-2">
-              <div>
-                <DialogTitle className="text-foreground text-3xl">
-                  Refer a Friend
-                </DialogTitle>
+      dialogHeader={(isDesktop) => {
+        const Header = isDesktop ? DialogHeader : DrawerHeader;
+        const Title = isDesktop ? DialogTitle : DrawerTitle;
+        const Description = isDesktop ? DialogDescription : DrawerDescription;
 
-                <DialogDescription className="text-foreground/60">
-                  Invite your friends to Bucket to earn rewards together.
-                </DialogDescription>
+        return (
+          <Header className="banner p-2">
+            <div className="wrapper banner rounded-sm grid grid-cols-5 p-4 dark:bg-app-theme-950/50 bg-app-theme-100/80 w-full min-h-20">
+              <div className="col-span-3 flex flex-col text-left gap-2">
+                <div>
+                  <Title className="text-foreground text-3xl">
+                    Refer a Friend
+                  </Title>
+
+                  <Description className="text-foreground/60">
+                    Invite your friends to Bucket to earn rewards together.
+                  </Description>
+                </div>
+                <div className="flex gap-1 dark:bg-app-theme-950 border text-app-theme-50 border-app-theme-700 dark:border-app-theme-900/70 bg-app-theme-600 w-fit rounded-xl pl-3 p-1 items-center">
+                  <span className="truncate font-mono font-bold">
+                    <Calligraph>{user?.payTag || "- - - - - - "}</Calligraph>
+                  </span>
+                  <Button
+                    className="p-2! h-fit rounded-2xl bg-app-theme-100 hover:bg-app-theme-100/80 text-app-theme-600"
+                    onClick={() => user?.payTag && copy(user.payTag)}
+                  >
+                    <CopyIcon className="h-3! w-3!" strokeWidth={3} />
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-1 dark:bg-app-theme-950 border text-app-theme-50 border-app-theme-700 dark:border-app-theme-900/70 bg-app-theme-600 w-fit rounded-xl pl-3 p-1 items-center">
-                <span className="truncate font-mono font-bold">
-                  <Calligraph>{user?.payTag || "- - - - - - "}</Calligraph>
-                </span>
-                <Button
-                  className="p-2! h-fit rounded-2xl bg-app-theme-100 hover:bg-app-theme-100/80 text-app-theme-600"
-                  onClick={() => user?.payTag && copy(user.payTag)}
-                >
-                  <CopyIcon className="h-3! w-3!" strokeWidth={3} />
-                </Button>
+              <div className="col-span-2 h-32">
+                <BucketHamsterIcon className="h-44" palette="violet" />
               </div>
             </div>
-            <div className="col-span-2 h-32">
-              <BucketHamsterIcon className="h-44" palette="violet" />
-            </div>
-          </div>
-        </DialogHeader>
-      }
+          </Header>
+        );
+      }}
     >
       <div className="flex flex-col gap-6 px-4 pb-4">
         {/* If the user doesn't have a paytag, they can't refer anyone yet */}
@@ -308,7 +315,7 @@ export function NavReferralDialog(
         ) : (
           /* If they DO have a PayTag, show the active dashboard */
           <div className="flex flex-col gap-4">
-            <div className="points-info flex flex-col gap-8 justify-between sm:flex-row-reverse -mx-4 px-4">
+            <div className="points-info flex flex-col gap-4 justify-between sm:flex-row-reverse -mx-4 px-4">
               <div className="flex flex-col gap-1 items-center justify-center">
                 <span className="text-8xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">
                   <Calligraph>{pointsInfo.points}</Calligraph>
@@ -333,7 +340,8 @@ export function NavReferralDialog(
                     <span>
                       Your friend gets{" "}
                       <strong className="font-bold">
-                        <Calligraph>10</Calligraph> credits
+                        <Calligraph>{pointsInfo.bonusPoints}</Calligraph>{" "}
+                        credits
                       </strong>{" "}
                       when they subscribe
                     </span>
@@ -343,7 +351,7 @@ export function NavReferralDialog(
                     <span>
                       You receive{" "}
                       <strong className="font-bold">
-                        <Calligraph>{pointsInfo.bonusPoints}</Calligraph>{" "}
+                        <Calligraph>{pointsInfo.pointsPerReferral}</Calligraph>{" "}
                         credits
                       </strong>{" "}
                       for each referral
