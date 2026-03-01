@@ -102,7 +102,7 @@ const ResponsiveDialog: React.FC<ResponsiveDialogProps> = ({
     >
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent className="max-h-[95%]">
-        <div className="wrapper overflow-y-auto -mt-6">
+        <div className="wrapper overflow-y-auto -mt-6 overflow-x-clip">
           {headerContent ? (
             headerContent
           ) : (
