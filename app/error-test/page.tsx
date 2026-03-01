@@ -52,7 +52,7 @@ export default function ErrorTestPage() {
         <div className="space-y-4">
           <div className="rounded-lg bg-white p-4 shadow">
             <h2 className="mb-2 text-lg font-medium">Render Error</h2>
-            <p className="mb-4 text-gray-600">
+            <p className="mb-4 text-neutral-600">
               Triggers an error during component rendering
             </p>
             <button onClick={() => setShowError(true)} className="btn">
@@ -62,7 +62,7 @@ export default function ErrorTestPage() {
 
           <div className="rounded-lg bg-white p-4 shadow">
             <h2 className="mb-2 text-lg font-medium">Async Error</h2>
-            <p className="mb-4 text-gray-600">
+            <p className="mb-4 text-neutral-600">
               Triggers an error in an asynchronous operation
             </p>
             <button onClick={triggerAsyncError} className="btn">
@@ -72,7 +72,7 @@ export default function ErrorTestPage() {
 
           <div className="rounded-lg bg-white p-4 shadow">
             <h2 className="mb-2 text-lg font-medium">Runtime Error</h2>
-            <p className="mb-4 text-gray-600">
+            <p className="mb-4 text-neutral-600">
               Triggers a JavaScript runtime error
             </p>
             <button onClick={triggerRuntimeError} className="btn">
@@ -82,7 +82,7 @@ export default function ErrorTestPage() {
 
           <div className="rounded-lg bg-white p-4 shadow">
             <h2 className="mb-2 text-lg font-medium">404 Not Found</h2>
-            <p className="mb-4 text-gray-600">
+            <p className="mb-4 text-neutral-600">
               Navigate to a non-existent page to test the not-found component
             </p>
             <Link href="/this-page-does-not-exist" className="btn inline-block">
