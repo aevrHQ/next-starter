@@ -197,9 +197,9 @@ ${error?.stack ?? "N/A"}
               {reset && mode === "error" && (
                 <>
                   <Button onClick={reset}>Try Again</Button>
-                  <Button onClick={() => router.back()}>Go Back</Button>
                 </>
               )}
+              <Button onClick={() => router.back()}>Go Back</Button>
 
               <Button
                 asChild
