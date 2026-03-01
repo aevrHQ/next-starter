@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { OnboardingReferralCatch } from "@/components/onboarding-referral-catch";
 
 export default function AppLayout({
   children,
@@ -18,7 +19,7 @@ export default function AppLayout({
               showThemeToggle: true,
             }}
           />
-
+          <OnboardingReferralCatch />
           {children}
         </SidebarInset>
       </SidebarProvider>

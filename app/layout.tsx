@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import NextTopLoader from "nextjs-toploader";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { ThemedToaster } from "@/components/themed-toaster";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,10 +35,10 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" enableSystem enableColorScheme>
           <NextTopLoader showSpinner={false} />
-          <Toaster />
           <TooltipProvider>
             <AuthProvider>{children}</AuthProvider>
           </TooltipProvider>
+          <ThemedToaster />
         </ThemeProvider>
       </body>
     </html>

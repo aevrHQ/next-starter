@@ -7,18 +7,32 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { PayIDService } from "@/utils/payid/payid-service";
 import { sileo } from "sileo";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   TagIcon,
   CopyIcon,
   UsersIcon,
   CheckCircleIcon,
   GiftIcon,
+  LinkIcon,
+  ZapIcon,
 } from "lucide-react";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import BucketHamsterIcon from "./Icon/BucketHamster";
+import { DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
+import { usePersistedState } from "@/hooks/aevr/use-persisted-state";
+import { formatDate } from "@/utils/aevr/date-formatter";
+import useShare from "@/hooks/aevr/use-share";
+import { Calligraph } from "calligraph";
 
 interface NavReferralDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  // open: boolean;
+  // onOpenChange: (open: boolean) => void;
+  className?: string;
 }
 
 interface ReferredUser {
@@ -29,24 +43,51 @@ interface ReferredUser {
   createdAt: string;
 }
 
-export function NavReferralDialog({
-  open,
-  onOpenChange,
-}: NavReferralDialogProps) {
+const REFERRAL_CUTOFF_DATE = new Date("2026-04-01T00:00:00.000Z").getTime();
+const POINTS_PER_REFERRAL = 5;
+const BONUS_POINTS = 10;
+
+export const useNavReferralDialog = () => {
+  const { setState: setNavReferralState, state: navReferralState } =
+    usePersistedState<{ open: boolean }>(
+      {
+        open: false,
+      },
+      {
+        storageKey: "nav-referral-dialog",
+        enablePersistence: false,
+      },
+    );
+
+  return {
+    navReferralState,
+    setNavReferralState,
+  };
+};
+
+export function NavReferralDialog(
+  {
+    // open,
+    // onOpenChange,
+  }: NavReferralDialogProps,
+) {
   const { user, refreshSession } = useAuth();
   const [loading, setLoading] = useState(false);
   const [fetchingReferrals, setFetchingReferrals] = useState(false);
   const [referredUsers, setReferredUsers] = useState<ReferredUser[]>([]);
   const [retroactiveCode, setRetroactiveCode] = useState("");
+  const { navReferralState, setNavReferralState } = useNavReferralDialog();
+  const [pointsInfo, setPointsInfo] = useState({
+    points: 0,
+    bonusPoints: 0,
+    pointsPerReferral: 0,
+    totalReferred: 0,
+    summary: "",
+    endDate: "",
+  });
+  const { copy } = useShare();
 
   const hasPayTag = !!user?.payTag;
-
-  // Fetch referrals when dialog opens if they have a payTag
-  useEffect(() => {
-    if (open && hasPayTag) {
-      loadReferrals();
-    }
-  }, [open, hasPayTag]);
 
   const loadReferrals = async () => {
     setFetchingReferrals(true);
@@ -83,7 +124,7 @@ export function NavReferralDialog({
           title: "Check your email",
           description: "We sent a secure link to activate your referral code.",
         });
-        onOpenChange(false);
+        setNavReferralState({ open: false });
       } else {
         sileo.error({
           title: "Setup Failed",
@@ -97,16 +138,6 @@ export function NavReferralDialog({
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCopyCode = async () => {
-    if (user?.payTag) {
-      await navigator.clipboard.writeText(user.payTag);
-      sileo.success({
-        title: "Copied!",
-        description: "Your referral code is copied to the clipboard.",
-      });
     }
   };
 
@@ -151,102 +182,253 @@ export function NavReferralDialog({
     }
   };
 
-  if (!user) return null;
+  const calculatePoints: (referredUsers: ReferredUser[]) => {
+    points: number;
+    bonusPoints: number;
+    pointsPerReferral: number;
+    totalReferred: number;
+    summary: string;
+    endDate: string;
+  } = (referredUsers) => {
+    let points = BONUS_POINTS;
+    for (const referredUser of referredUsers) {
+      if (new Date(referredUser.createdAt).getTime() < REFERRAL_CUTOFF_DATE) {
+        points += POINTS_PER_REFERRAL;
+      }
+    }
+    if (referredUsers.length >= 10) {
+      points += BONUS_POINTS;
+    }
+    if (user?.referredBy) {
+      points += POINTS_PER_REFERRAL;
+    }
+    return {
+      points,
+      bonusPoints: BONUS_POINTS,
+      pointsPerReferral: POINTS_PER_REFERRAL,
+      totalReferred: referredUsers.length,
+      summary: `You have referred ${referredUsers.length} users. You have earned ${points} points.`,
+      endDate: formatDate(REFERRAL_CUTOFF_DATE, {
+        formatStyle: "absolute",
+      }),
+    };
+  };
+
+  // Fetch referrals when dialog opens if they have a payTag
+  useEffect(() => {
+    if (navReferralState.open && hasPayTag) {
+      loadReferrals();
+    }
+  }, [navReferralState.open, hasPayTag]);
+
+  // calculate points after 1s delay after dialog opens
+  useEffect(() => {
+    if (navReferralState.open) {
+      setTimeout(() => {
+        setPointsInfo(calculatePoints(referredUsers));
+      }, 1000);
+    } else {
+      setPointsInfo({
+        points: 0,
+        bonusPoints: 0,
+        pointsPerReferral: 0,
+        totalReferred: 0,
+        summary: "",
+        endDate: "",
+      });
+    }
+  }, [navReferralState.open, referredUsers]);
 
   return (
     <ResponsiveDialog
-      openPrompt={open}
-      onOpenPromptChange={(v) => onOpenChange(!!v)}
+      openPrompt={navReferralState.open}
+      onOpenPromptChange={(v) => setNavReferralState({ open: !!v })}
       title="Refer a Friend"
       description="Invite your friends to Bucket to earn rewards together."
+      dialogHeader={
+        <DialogHeader className="banner p-2">
+          <div className="wrapper banner rounded-sm grid grid-cols-5 p-4 dark:bg-app-theme-950/50 bg-app-theme-100/80 w-full min-h-20">
+            <div className="col-span-3 flex flex-col gap-2">
+              <div>
+                <DialogTitle className="text-foreground text-3xl">
+                  Refer a Friend
+                </DialogTitle>
+
+                <DialogDescription className="text-foreground/60">
+                  Invite your friends to Bucket to earn rewards together.
+                </DialogDescription>
+              </div>
+              <div className="flex gap-1 dark:bg-app-theme-950 border text-app-theme-50 border-app-theme-700 dark:border-app-theme-900/70 bg-app-theme-600 w-fit rounded-xl pl-3 p-1 items-center">
+                <span className="truncate font-mono font-bold">
+                  <Calligraph>{user?.payTag || "- - - - - - "}</Calligraph>
+                </span>
+                <Button
+                  className="p-2! h-fit rounded-2xl bg-app-theme-100 hover:bg-app-theme-100/80 text-app-theme-600"
+                  onClick={() => user?.payTag && copy(user.payTag)}
+                >
+                  <CopyIcon className="h-3! w-3!" strokeWidth={3} />
+                </Button>
+              </div>
+            </div>
+            <div className="col-span-2 h-32">
+              <BucketHamsterIcon className="h-44" palette="violet" />
+            </div>
+          </div>
+        </DialogHeader>
+      }
     >
-      <div className="flex flex-col gap-6 py-4">
+      <div className="flex flex-col gap-6 px-4 pb-4">
         {/* If the user doesn't have a paytag, they can't refer anyone yet */}
         {!hasPayTag ? (
-          <InfoBox
-            type="warning"
-            icon={<GiftIcon className="h-6 w-6 text-yellow-500" />}
-            title="Setup your Referral Code"
-            description="You need to link a PayID account before you can receive a referral code. Click below to securely generate one right now."
-            actions={[
-              {
-                name: loading ? "Generating..." : "Generate Referral Code",
-                onClick: handleGenerateMagicLink,
-                variant: "default",
-                disabled: loading,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              } as any,
-            ]}
-          />
+          <>
+            <InfoBox
+              type="warning"
+              icon={<GiftIcon className="h-6 w-6 text-yellow-500" />}
+              title="Setup your Referral Code"
+              description="You need to link a PayID account before you can receive a referral code. Click below to securely generate one right now."
+              actions={[
+                {
+                  name: loading ? "Generating..." : "Generate Referral Code",
+                  onClick: handleGenerateMagicLink,
+                  variant: "default",
+                  disabled: loading,
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any,
+              ]}
+            />
+            {user?.referredBy && (
+              <div className="flex items-center gap-2 rounded-xl border bg-green-50/50 p-4 text-green-700 dark:border-green-900/30 dark:bg-green-950/20 dark:text-green-400 mx-0">
+                <CheckCircleIcon className="h-5 w-5" />
+                <span className="text-sm font-medium">
+                  You were referred by <strong>{user?.referredBy}</strong>
+                </span>
+              </div>
+            )}
+          </>
         ) : (
           /* If they DO have a PayTag, show the active dashboard */
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/30 p-8 text-center">
-              <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
-                Your Referral Code
-              </span>
-              <div
-                onClick={handleCopyCode}
-                className="flex items-center gap-3 cursor-pointer select-all rounded-lg bg-background px-6 py-3 text-3xl font-bold tracking-tight shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
-                title="Click to copy"
-              >
-                {user.payTag}
-                <CopyIcon className="h-5 w-5 text-muted-foreground" />
+          <div className="flex flex-col gap-4">
+            <div className="points-info flex flex-col gap-8 justify-between sm:flex-row-reverse -mx-4 px-4">
+              <div className="flex flex-col gap-1 items-center justify-center">
+                <span className="text-8xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent">
+                  <Calligraph>{pointsInfo.points}</Calligraph>
+                </span>
+                <span className="text-sm sm:text-xs sm:text-right font-medium text-muted-foreground uppercase tracking-wider">
+                  Total Points
+                </span>
               </div>
+
+              {/* How it works section */}
+              <div className="flex flex-col gap-4">
+                <span className="text-sm text-muted-foreground">
+                  How it works:
+                </span>
+                <ul className="flex flex-col gap-2 text-sm font-medium">
+                  <li className="flex items-center gap-3">
+                    <ZapIcon className="h-5 w-5 text-foreground" />
+                    <span>Share your invite link</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <GiftIcon className="h-5 w-5 text-foreground" />
+                    <span>
+                      Your friend gets{" "}
+                      <strong className="font-bold">
+                        <Calligraph>10</Calligraph> credits
+                      </strong>{" "}
+                      when they subscribe
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <UsersIcon className="h-5 w-5 text-foreground" />
+                    <span>
+                      You receive{" "}
+                      <strong className="font-bold">
+                        <Calligraph>{pointsInfo.bonusPoints}</Calligraph>{" "}
+                        credits
+                      </strong>{" "}
+                      for each referral
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Invite Link */}
+            <div className="flex flex-col gap-2   border-t border-dashed pt-2 -mx-4 px-4">
+              <span className="text-sm text-muted-foreground">
+                Your invite link:
+              </span>
+              <InputGroup>
+                <InputGroupAddon className="text-muted-foreground pl-3">
+                  <LinkIcon className="h-4 w-4" />
+                </InputGroupAddon>
+                <InputGroupInput
+                  readOnly
+                  value={`${typeof window !== "undefined" ? window.location.host : "bucket.app"}/r/${user.payTag}`}
+                />
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    onClick={() =>
+                      copy(
+                        `${typeof window !== "undefined" ? window.location.origin : "https://bucket.app"}/r/${user.payTag}`,
+                      )
+                    }
+                  >
+                    Copy Link
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
             </div>
 
             {/* Retroactive Referral Submission (If they weren't referred) */}
             {!user.referredBy && (
-              <div className="flex flex-col gap-2 rounded-xl bg-muted/50 p-4">
+              <div className="flex flex-col gap-2  -mx-4 px-4">
                 <span className="text-sm font-medium">Were you referred?</span>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <TagIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Enter a friend's PayTag code"
-                      className="pl-9 bg-background"
-                      value={retroactiveCode}
-                      onChange={(e) => setRetroactiveCode(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
-                  <Button
-                    onClick={handleSubmitRetroactiveCode}
-                    disabled={!retroactiveCode.trim() || loading}
-                  >
-                    Submit
-                  </Button>
-                </div>
+                <InputGroup>
+                  <InputGroupAddon className="text-muted-foreground pl-3">
+                    <TagIcon className="h-4 w-4" />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    type="text"
+                    placeholder="Enter a friend's PayTag code"
+                    value={retroactiveCode}
+                    onChange={(e) => setRetroactiveCode(e.target.value)}
+                    disabled={loading}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      onClick={handleSubmitRetroactiveCode}
+                      disabled={!retroactiveCode.trim() || loading}
+                      variant="secondary"
+                    >
+                      Submit
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
               </div>
             )}
 
             {/* Readonly Referenced By */}
-            {user.referredBy && (
-              <div className="flex items-center gap-2 rounded-xl border bg-green-50/50 p-4 text-green-700 dark:border-green-900/30 dark:bg-green-950/20 dark:text-green-400">
+            {user?.referredBy && (
+              <div className="flex items-center gap-2 rounded-xl border bg-green-50/50 p-4 text-green-700 dark:border-green-900/30 dark:bg-green-950/20 dark:text-green-400 mx-0">
                 <CheckCircleIcon className="h-5 w-5" />
                 <span className="text-sm font-medium">
-                  You were referred by <strong>{user.referredBy}</strong>
+                  You were referred by <strong>{user?.referredBy}</strong>
                 </span>
               </div>
             )}
 
             {/* Who I Referred List */}
-            <div className="flex flex-col gap-4 pt-4 border-t">
-              <h4 className="flex items-center gap-2 text-sm font-semibold">
-                <UsersIcon className="h-4 w-4" />
-                People you&apos;ve referred ({referredUsers.length})
-              </h4>
-
+            <div className="flex flex-col gap-4 border-t -mx-4 px-4">
               {fetchingReferrals ? (
                 <div className="text-sm text-muted-foreground">Loading...</div>
               ) : referredUsers.length === 0 ? (
-                <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                <div className="pt-4 text-center text-sm text-muted-foreground">
                   You haven&apos;t referred anyone yet. Share your code to get
                   started!
                 </div>
               ) : (
-                <div className="flex max-h-48 flex-col gap-2 overflow-y-auto pr-2">
+                <div className="flex max-h-48 flex-col gap-2 overflow-y-auto pt-4">
                   {referredUsers.map((rUser) => (
                     <div
                       key={rUser._id}

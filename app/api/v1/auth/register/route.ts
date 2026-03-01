@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { User } from "@/lib/models/User";
+import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
@@ -30,6 +31,14 @@ export async function POST(req: Request) {
       const referringUser = await User.findOne({ payTag: referralCode });
       if (referringUser) {
         referredById = referringUser._id;
+      }
+    } else {
+      // Fallback: Check if there's a referral link cookie set
+      const cookieStore = await cookies();
+      const cookieReferredById = cookieStore.get("bucket-referral")?.value;
+      if (cookieReferredById) {
+        referredById = cookieReferredById;
+        // Optionally map it to valid ObjectId type if needed, mongoose does this automatically
       }
     }
 

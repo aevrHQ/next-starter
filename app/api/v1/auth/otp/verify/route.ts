@@ -4,6 +4,7 @@ import { User } from "@/lib/models/User";
 import { VerificationToken } from "@/lib/models/VerificationToken";
 import bcrypt from "bcryptjs";
 import { encryptSession } from "@/lib/session";
+import { applyReferralCookie } from "@/lib/referrals";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
@@ -80,6 +81,9 @@ export async function POST(req: Request) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: "/",
     });
+
+    // Fire & Forget: bind any active referral cookie payload
+    applyReferralCookie(user._id.toString());
 
     return NextResponse.json({
       success: true,

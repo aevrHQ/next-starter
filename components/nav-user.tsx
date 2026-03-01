@@ -20,7 +20,10 @@ import {
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { NavReferralDialog } from "@/components/nav-referral-dialog";
+import {
+  NavReferralDialog,
+  useNavReferralDialog,
+} from "@/components/nav-referral-dialog";
 import {
   BadgeCheckIcon,
   BellIcon,
@@ -43,7 +46,7 @@ export function NavUser({ variant = "sidebar", className }: NavUserProps) {
   const { isMobile } = useSidebar();
   const { user, isLoading, logout } = useAuth();
   const { copy } = useShare();
-  const [referralDialogOpen, setReferralDialogOpen] = useState(false);
+  const { navReferralState, setNavReferralState } = useNavReferralDialog();
 
   if (isLoading) {
     if (variant === "header") {
@@ -84,7 +87,9 @@ export function NavUser({ variant = "sidebar", className }: NavUserProps) {
     .toUpperCase()
     .slice(0, 2);
 
-  const handleReferralBoxOpen = () => setReferralDialogOpen(true);
+  const handleReferralBoxOpen = () => {
+    setNavReferralState({ open: true });
+  };
 
   const dropdownContent = (
     <DropdownMenuContent
@@ -127,6 +132,7 @@ export function NavUser({ variant = "sidebar", className }: NavUserProps) {
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuItem
+          onSelect={(e) => e.preventDefault()}
           onClick={handleReferralBoxOpen}
           className="cursor-pointer"
         >
@@ -205,10 +211,7 @@ export function NavUser({ variant = "sidebar", className }: NavUserProps) {
         </SidebarMenuItem>
       </SidebarMenu>
 
-      <NavReferralDialog
-        open={referralDialogOpen}
-        onOpenChange={setReferralDialogOpen}
-      />
+      <NavReferralDialog />
     </>
   );
 }

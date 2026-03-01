@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
+import { cookies } from "next/headers";
+import { User } from "@/lib/models/User";
 import { OAuthSession } from "@/lib/models/OAuthSession";
 import {
   generateCodeVerifier,
@@ -40,10 +42,43 @@ export async function POST(request: NextRequest) {
 
     // Store session in database (userId optional)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Parse optional referral code from body
+    let referrerId: string | null = null;
+    try {
+      const body = await request.clone().json();
+      console.log("INITIATE ROUTE PARSED BODY:", body);
+      if (body.ref) {
+        // Resolve payTag to Object ID
+        const referrer = await User.findOne({ payTag: body.ref }).lean<{
+          _id: string;
+        }>();
+        if (referrer) {
+          console.log(
+            "INITIATE ROUTE FOUND REFERRER:",
+            referrer._id.toString(),
+          );
+          referrerId = referrer._id.toString();
+        } else {
+          console.log("INITIATE ROUTE FAILED TO FIND REFERRER:", body.ref);
+        }
+      }
+    } catch (e) {
+      console.log("INITIATE ROUTE BODY PARSE ERROR:", e);
+      // Body might be empty, that's fine
+    }
+
+    if (!referrerId) {
+      // Snag any pending referrals before browser bounces cross-site
+      const cookieStore = await cookies();
+      referrerId = cookieStore.get("bucket-referral")?.value || null;
+    }
+
     await OAuthSession.create({
       state,
       codeVerifier,
       userId: null,
+      referralId: referrerId,
       csrf: rawState,
       expiresAt,
     });

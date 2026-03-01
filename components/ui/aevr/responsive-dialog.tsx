@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useState } from "react";
 
 import {
   Dialog,
@@ -26,6 +26,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 export interface ResponsiveDialogProps {
   title?: string | null;
   description?: string | null;
+  dialogHeader?: ReactNode;
   drawerClose?: ReactNode;
   trigger?: ReactNode;
   children?: ReactNode;
@@ -39,40 +40,49 @@ const ResponsiveDialog: React.FC<ResponsiveDialogProps> = ({
   openPrompt,
   title,
   description,
+  dialogHeader,
   drawerClose,
   onOpenPromptChange,
 }) => {
-  const [open, setOpen] = useState(openPrompt);
+  const [internalOpen, setInternalOpen] = useState(openPrompt || false);
+  const isControlled = openPrompt !== undefined;
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  useEffect(() => {
-    setOpen(openPrompt);
-  }, [openPrompt]);
+  const dialogOpen = isControlled ? openPrompt : internalOpen;
 
-  useEffect(() => {
-    if (onOpenPromptChange) {
-      onOpenPromptChange(open);
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!isControlled) {
+      setInternalOpen(newOpen);
     }
-  }, [open, onOpenPromptChange]);
+    if (onOpenPromptChange) {
+      onOpenPromptChange(newOpen);
+    }
+  };
 
   if (isDesktop) {
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
         <DialogContent
-          className={`max-h-[90vh] max-w-4xl ${
+          className={`max-h-[90vh] p-0 max-w-4xl ${
             title != null || description != null ? "" : "gap-0"
           }`}
         >
-          <DialogHeader className="px-2">
-            {title != null && <DialogTitle>{title || "Heads Up!"}</DialogTitle>}
-            {description != null && (
-              <DialogDescription>
-                {description ||
-                  "Here's some important information or action you need to review and take"}
-              </DialogDescription>
-            )}
-          </DialogHeader>
+          {dialogHeader ? (
+            dialogHeader
+          ) : (
+            <DialogHeader className="p-4">
+              {title != null && (
+                <DialogTitle>{title || "Heads Up!"}</DialogTitle>
+              )}
+              {description != null && (
+                <DialogDescription>
+                  {description ||
+                    "Here's some important information or action you need to review and take"}
+                </DialogDescription>
+              )}
+            </DialogHeader>
+          )}
           <ScrollArea className="max-h-[calc(90vh-5.35rem)]">
             {children}
           </ScrollArea>
@@ -82,7 +92,11 @@ const ResponsiveDialog: React.FC<ResponsiveDialogProps> = ({
   }
 
   return (
-    <Drawer shouldScaleBackground open={open} onOpenChange={setOpen}>
+    <Drawer
+      shouldScaleBackground
+      open={dialogOpen}
+      onOpenChange={handleOpenChange}
+    >
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent className="max-h-[95%]">
         <div className="wrapper overflow-y-auto">

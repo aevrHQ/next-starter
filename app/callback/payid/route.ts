@@ -5,6 +5,7 @@ import { User } from "@/lib/models/User";
 import { exchangeCodeForTokens, getUserInfo } from "@/lib/payid";
 import { encryptToken } from "@/lib/crypto";
 import { encryptSession } from "@/lib/session";
+import mongoose from "mongoose";
 
 export async function GET(request: NextRequest) {
   try {
@@ -104,7 +105,28 @@ export async function GET(request: NextRequest) {
         updatedAt: new Date(),
       },
     };
+
+    // Safely attach any referral payload tracked through the cross-site OAuth bounce
+    console.log("PAYID CALLBACK: Checking Referral ID ->", session.referralId);
+    console.log("PAYID CALLBACK: Current User Referred By ->", user.referredBy);
+
+    if (
+      session.referralId &&
+      !user.referredBy &&
+      user._id.toString() !== session.referralId
+    ) {
+      console.log("PAYID CALLBACK: Binding Referral ID to User!");
+      user.referredBy = new mongoose.Types.ObjectId(session.referralId);
+    } else {
+      console.log("PAYID CALLBACK: Evaluating false for Referral Binding:", {
+        sessionRefId: session.referralId,
+        userRefBy: user.referredBy,
+        userIdMatch: user._id.toString() === session.referralId,
+      });
+    }
+
     await user.save();
+    console.log("PAYID CALLBACK: User successfully saved.");
 
     // Clear session
     await OAuthSession.deleteOne({ _id: session._id });

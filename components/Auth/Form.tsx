@@ -72,7 +72,8 @@ const AuthForm: React.FC<{
   options?: {
     showHeader?: false;
   };
-}> = ({ mode, options }) => {
+  initialReferralCode?: string;
+}> = ({ mode, options, initialReferralCode }) => {
   const { setStatus, aggregatedStatus } = useStatus({
     defaultStatuses: {
       payidLoading: {
@@ -96,9 +97,14 @@ const AuthForm: React.FC<{
 
       // Create PayID service (no auth token needed for OAuth initiation)
       const payidService = new PayIDService();
+      const currentRef = urlRef || initialReferralCode;
+
+      console.log("PAYID INIT REF PAYLOAD ->", currentRef);
 
       // Initiate OAuth flow
-      const { authorizationUrl } = await payidService.initiateOAuth();
+      const { authorizationUrl } = await payidService.initiateOAuth(
+        currentRef ? { ref: currentRef } : undefined,
+      );
 
       // Redirect to PayID authorization
       window.location.href = authorizationUrl;
@@ -145,6 +151,7 @@ const AuthForm: React.FC<{
   const urlEmail = searchParams.get("email");
   const urlOtp = searchParams.get("otp");
   const urlSent = searchParams.get("sent");
+  const urlRef = searchParams.get("ref");
 
   const [isVerifyingFromUrl, setIsVerifyingFromUrl] = useState(false);
 
@@ -491,7 +498,7 @@ const AuthForm: React.FC<{
         email: values.email || "",
         password: values.password || "",
         confirmPassword: "",
-        referralCode: "",
+        referralCode: urlRef || initialReferralCode || "",
       },
       validationSchema: Yup.object({
         email: Yup.string()

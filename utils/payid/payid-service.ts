@@ -13,10 +13,12 @@ export class PayIDService extends HttpClient {
    * Initiate OAuth flow
    * Returns authorization URL to redirect user to PayID
    */
-  async initiateOAuth(): Promise<PayIDOAuthInitiateResponse> {
+  async initiateOAuth(data?: {
+    ref?: string;
+  }): Promise<PayIDOAuthInitiateResponse> {
     const response = await this.post<PayIDOAuthInitiateResponse>(
       "/api/v1/payid/oauth/initiate",
-      {},
+      data || {},
     );
 
     if (isApiResponse<PayIDOAuthInitiateResponse>(response)) {
