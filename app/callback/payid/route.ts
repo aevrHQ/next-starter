@@ -132,7 +132,13 @@ export async function GET(request: NextRequest) {
     await OAuthSession.deleteOne({ _id: session._id });
 
     // Generate a secure JWT auth cookie to log the user in
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
+    const finalRedirectUrl =
+      session.returnUrl && session.returnUrl.startsWith("/")
+        ? session.returnUrl
+        : "/dashboard";
+    const response = NextResponse.redirect(
+      new URL(finalRedirectUrl, request.url),
+    );
 
     const sessionPayload = {
       userId: user._id.toString(),

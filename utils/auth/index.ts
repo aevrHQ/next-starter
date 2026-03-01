@@ -22,7 +22,11 @@ export class AuthService {
       const result = await response.json();
       if (!result.success) throw new Error(result.message);
 
-      return { success: true, redirectUrl: "/dashboard" };
+      return {
+        success: true,
+        redirectUrl:
+          (data as { returnUrl?: string })?.returnUrl || "/dashboard",
+      };
     } catch (error: unknown) {
       console.error(error);
       throw error;

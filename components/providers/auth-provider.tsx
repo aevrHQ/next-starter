@@ -66,9 +66,15 @@ export function useAuth() {
 
   const logout = async () => {
     try {
+      const currentUrl = window.location.pathname + window.location.search;
       await fetch("/api/v1/auth/logout", { method: "POST" });
       setUser(null);
-      router.push("/login");
+
+      const loginUrl = new URL("/login", window.location.origin);
+      if (currentUrl && currentUrl !== "/login" && currentUrl !== "/register") {
+        loginUrl.searchParams.set("returnUrl", encodeURIComponent(currentUrl));
+      }
+      router.push(loginUrl.toString());
     } catch (error) {
       console.error("Logout failed:", error);
     }

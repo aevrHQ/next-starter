@@ -43,11 +43,15 @@ export async function POST(request: NextRequest) {
     // Store session in database (userId optional)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Parse optional referral code from body
+    // Parse optional referral code and returnUrl from body
     let referrerId: string | null = null;
+    let returnUrl: string | null = null;
     try {
       const body = await request.clone().json();
       console.log("INITIATE ROUTE PARSED BODY:", body);
+      if (body.returnUrl) {
+        returnUrl = body.returnUrl;
+      }
       if (body.ref) {
         // Resolve payTag to Object ID
         const referrer = await User.findOne({ payTag: body.ref }).lean<{
@@ -79,6 +83,7 @@ export async function POST(request: NextRequest) {
       codeVerifier,
       userId: null,
       referralId: referrerId,
+      returnUrl: returnUrl,
       csrf: rawState,
       expiresAt,
     });

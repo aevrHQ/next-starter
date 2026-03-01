@@ -102,9 +102,10 @@ const AuthForm: React.FC<{
       console.log("PAYID INIT REF PAYLOAD ->", currentRef);
 
       // Initiate OAuth flow
-      const { authorizationUrl } = await payidService.initiateOAuth(
-        currentRef ? { ref: currentRef } : undefined,
-      );
+      const { authorizationUrl } = await payidService.initiateOAuth({
+        ...(currentRef ? { ref: currentRef } : {}),
+        returnUrl: finalReturnUrl || undefined,
+      });
 
       // Redirect to PayID authorization
       window.location.href = authorizationUrl;
@@ -1038,7 +1039,10 @@ const AuthForm: React.FC<{
           )}
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link
+              href={`/login${finalReturnUrl ? `?returnUrl=${encodeURIComponent(finalReturnUrl)}` : ""}`}
+              className="text-primary hover:underline"
+            >
               Log in
             </Link>
           </div>
@@ -1228,7 +1232,10 @@ const AuthForm: React.FC<{
 
         <div className="mt-4 text-center text-sm">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-primary hover:underline">
+          <Link
+            href={`/register${finalReturnUrl ? `?returnUrl=${encodeURIComponent(finalReturnUrl)}` : ""}`}
+            className="text-primary hover:underline"
+          >
             Sign up
           </Link>
         </div>

@@ -5,6 +5,7 @@ export interface IOAuthSession extends Document {
   codeVerifier: string;
   userId?: string | null;
   referralId?: string | null;
+  returnUrl?: string | null;
   csrf: string;
   expiresAt: Date;
   createdAt: Date;
@@ -27,6 +28,10 @@ const OAuthSessionSchema = new Schema<IOAuthSession>(
       required: false,
     },
     referralId: {
+      type: String,
+      required: false,
+    },
+    returnUrl: {
       type: String,
       required: false,
     },

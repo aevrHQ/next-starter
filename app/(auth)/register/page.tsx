@@ -4,6 +4,11 @@ import { cookies } from "next/headers";
 import { User } from "@/lib/models/User";
 import { connectDB } from "@/lib/mongodb";
 
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Get Started";
+const APP_DESCRIPTION =
+  process.env.NEXT_PUBLIC_APP_DESCRIPTION ||
+  "Create an account to continue to your account";
+
 const RegisterPage = async () => {
   const cookieStore = await cookies();
   const referrerId = cookieStore.get("bucket-referral")?.value;
@@ -27,10 +32,10 @@ const RegisterPage = async () => {
       <header>
         <div className="wrapper">
           <h1 className="text-4xl font-bold text-background dark:text-foreground lg:text-foreground">
-            Bucket
+            {APP_NAME}
           </h1>
           <p className="text-lg font-medium text-background dark:text-foreground lg:text-foreground">
-            You don&apos;t have to forget interesting things.
+            {APP_DESCRIPTION}
           </p>
         </div>
       </header>

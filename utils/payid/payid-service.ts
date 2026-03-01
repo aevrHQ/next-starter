@@ -15,6 +15,7 @@ export class PayIDService extends HttpClient {
    */
   async initiateOAuth(data?: {
     ref?: string;
+    returnUrl?: string;
   }): Promise<PayIDOAuthInitiateResponse> {
     const response = await this.post<PayIDOAuthInitiateResponse>(
       "/api/v1/payid/oauth/initiate",

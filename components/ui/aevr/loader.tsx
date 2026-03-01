@@ -24,8 +24,8 @@ const LoaderIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
   );
 };
 
-const Loader: React.FC<{ loading: boolean; className?: string }> = ({
-  loading,
+const Loader: React.FC<{ loading?: boolean; className?: string }> = ({
+  loading = true,
   className,
 }) => {
   return (
